@@ -18,6 +18,13 @@ library(dplyr)
 
 
 ```{r}
+players <- read_csv("players.csv") %>% select(playerId,nameFull,nflId,collegeId)
 
+salaries <- read_csv("football_salaries.csv") %>% select(position,nameFull=player,team,avg_year)
+
+fumblForced <- read_csv("fumblForced.csv")
+fumbles <- read_csv("fumbles.csv")
+
+finalDate <- inner_join(players,salaries,by="nameFull") %>% na.omit()
 ```
 

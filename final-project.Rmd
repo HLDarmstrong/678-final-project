@@ -2,12 +2,14 @@
 title: "678-final-project"
 author: "Shengbo Wang"
 date: "2022-11-29"
-output: html_document
+output:
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-	echo = TRUE,
+	echo = F,
 	message = FALSE,
 	warning = FALSE
 )
@@ -19,6 +21,13 @@ library(ggplot2)
 library(tidyverse)
 library(dplyr)
 ```
+#Abstract
+
+The football is one of the most popular sports in United State, The National Football League is a professional American football league that consists of 32 teams
+
+#Introduction
+
+Russell Wilson from team Seahawks have the highest year salaries at 35 million. 
 
 First I combine the data from https://www.kaggle.com/datasets/toddsteussie/nfl-play-statistics-dataset-2004-to-present?select=rusher.csv.
 
@@ -26,15 +35,12 @@ First I combine the data from https://www.kaggle.com/datasets/toddsteussie/nfl-p
 players <- read_csv("players.csv") %>% select(playerId,nameFull,nflId)
 salaries <- read_csv("football_salaries.csv") %>% select(position,nameFull=player,team,salaries=avg_year)
 data1 <- inner_join(players,salaries)
-```
 
-
-```{r}
 rusher <- read_csv("rusher.csv") %>%
   group_by(playerId) %>%
   summarise(rushYards=sum(rushYards)) %>% 
   select(playerId,rushYards)
-data2 <- inner_join(data1,rusher)
+data2 <- right_join(data1,rusher)
 
 receiver <- read_csv("receiver.csv") %>% 
   select(playerId,recYards,recYac,rec1down) %>% 
@@ -42,15 +48,21 @@ receiver <- read_csv("receiver.csv") %>%
   summarise(recYards=sum(recYards),
             recYac=sum(recYac),
             rec1down=sum(rec1down))
-data3 <- inner_join(data2 ,receiver)
+data3 <- right_join(data2 ,receiver)
 
 passer <- read_csv("passer.csv") %>% 
   select(playerId,passAtt) %>% 
   group_by(playerId) %>% 
   summarise(passAtt=sum(passAtt))
-data <- inner_join(data3,passer)
+data4 <- right_join(data3,passer)
 
+fumbles <- read_csv("fumbles.csv") %>% 
+  select(playerId,fumTurnover) %>% 
+  group_by(playerId) %>% 
+  summarise(fumTurnover=sum(fumTurnover))
+data5 <- right_join(data4,fumbles)
 
+data <- data.frame(data5)
 ```
 
 ```{r}

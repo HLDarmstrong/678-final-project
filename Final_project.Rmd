@@ -1,0 +1,143 @@
+---
+title: "Final_Project_NBA"
+author: "Shengbo Wang"
+date: "2022-12-05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = F,
+	message = FALSE,
+	warning = FALSE
+)
+library(tidyr)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(knitr)
+library(stringr)
+library(kableExtra)
+library(lme4)
+library(corrplot)
+library(PerformanceAnalytics)
+```
+
+##Abstract
+
+##Introduction
+
+I knew Yao Ming when I was very young. He is the most famous Chinese player in NBA in China till today. Yao Ming has also brought the game of basketball to schools. I also started watching NBA games because of Yao Ming. Now Basketball is one of the most popular sports in the world, NBA has the most high quality of players. Some of the players are over 34 millions per year. Apart from the players' popularity and Internet traffic, I want to know what makes more money per year by looking at their statistic in the game.
+##Methods
+
+###Data Preprocessing
+The data set come from (https://www.kaggle.com/datasets/drgilermo/nba-players-stats), which has the Season stats from many different aspects, such ass Three point field goals, 2 points goal and 
+
+
+| column names    | explanation                                         |
+| :--:            | :-----                                              |
+| Player          | Name of the player                                  |
+| Tm              | Name of the Team                                    |
+| Pos             | Position of player                                  |
+| Age             | Age of player                                       |
+| G               | Game played                                         |
+| FTr             | Free Throw Rate                                     |
+| WSperM          | Win Shares Per 48 Minutes                           |
+| FG              | Field Goals                                         |
+| FGr             | Field Goal Percentage                               |
+| ThreeP          | 3-Point Field Goals                                 |
+| ThreePr         | 3-Point Field Goal Percentage                       |  
+| TwoP            | 2-Point Field Goals                                 |
+| TwoPr           | 2-Point Field Goals Percentage                      |
+| EffectiveP      | Effective Field Goal Percentage                     |
+| FT              | Free Throws                                         |
+| FTp             | Free Throw Percentage                               |
+| TRB             | Total Rebounds                                      |
+| AST             | Assists                                             |
+| STL             | Yards gained from scrimmage                         |
+| BLK             | Blocks                                              |
+| TOV             | Turnovers                                           |
+| PF              | Personal Fouls                                      |
+| PTS             | Points                                              |
+| Salary          | Annual salary of player (dollars)                   |
+
+```{r}
+Salary <- read_csv("NBA_season1718_salary.csv") %>% 
+  select(Player,Tm,Salary=salary)
+Seasons_Stats <- read_csv("Seasons_Stats.csv") %>% 
+  select(Year,Player,Tm,Pos,Age,G,
+         FTr,WSperM="WS/48",FG,FGr="FG%",
+         ThreeP="3P",ThreePr="3P%",TwoP="2P",TwoPr="2P%",
+         EffectiveP="eFG%",FT,FTp="FT%",TRB,AST,STL,BLK,
+         TOV,PF,PTS)
+
+NBA <- inner_join(Seasons_Stats,Salary)%>%
+  filter(Year==2017)
+NBA <- data.frame(NBA) %>% na.omit()
+
+```
+
+```{r}
+ggplot(NBA,aes(Salary))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(Salary))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+
+```
+
+##EDA
+
+```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Gameplayed and salaries")}
+ggplot(data =NBA) + 
+  aes(x = log(G + 1), y = log(Salary)) + 
+  geom_point(aes(color = factor(Tm)), size = .6) + 
+  geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
+
+ggplot(data = NBA) + 
+  aes(x = log(G + 1), y = log(Salary)) + 
+  geom_point(aes(color = factor(Pos)), size = .6) + 
+  geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
+```
+
+```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Points made and salaries")}
+
+ggplot(data =NBA) + 
+  aes(x = log(PTS + 1), y = log(Salary)) + 
+  geom_point(aes(color = factor(Tm)), size = .6) + 
+  geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
+
+ggplot(data = NBA) + 
+  aes(x = log(PTS + 1), y = log(Salary)) + 
+  geom_point(aes(color = factor(Pos)), size = .6) + 
+  geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
+```
+
+```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Win share per 84 mins and salaries")}
+ggplot(data =NBA) + 
+  aes(x = WSperM, y = log(Salary)) + 
+  geom_point(aes(color = factor(Tm)), size = .6) + 
+  geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
+
+ggplot(data = NBA) + 
+  aes(x = WSperM, y = log(Salary)) + 
+  geom_point(aes(color = factor(Pos)), size = .6) + 
+  geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
+```
+
+
+#Model fitting
+
+```{r, fig.height=5, fig.width=7, fig.cap="Correlation Matrix"}
+NBA_Subset <- NBA[,c(5:18)]
+chart.Correlation(cor(NBA_Subset))
+```
+Based on the correlation plot,
+
+```{r}
+# model=lmer()
+```
+

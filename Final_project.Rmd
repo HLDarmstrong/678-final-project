@@ -21,6 +21,7 @@ library(kableExtra)
 library(lme4)
 library(corrplot)
 library(PerformanceAnalytics)
+library(latexpdf)
 ```
 
 ##Abstract
@@ -133,7 +134,7 @@ ggplot(NBA) +
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 ```
 
-```{r}
+```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Fiedl goals per 84 mins and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
   aes(x = FG, y = log(Salary)) + 
   geom_point(aes(color = factor(Tm)), size = .6) + 
@@ -145,7 +146,7 @@ ggplot(NBA) +
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 
 ```
-```{r}
+```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Totoal rebound per 84 mins and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
   aes(x = TRB, y = log(Salary)) + 
   geom_point(aes(color = factor(Tm)), size = .6) + 

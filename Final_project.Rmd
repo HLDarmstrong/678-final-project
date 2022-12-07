@@ -44,24 +44,19 @@ The data set come from (https://www.kaggle.com/datasets/drgilermo/nba-players-st
 | Pos             | Position of player                                  |
 | Age             | Age of player                                       |
 | G               | Game played                                         |
-| FTr             | Free Throw Rate                                     |
-| WSperM          | Win Shares Per 48 Minutes                           |
-| FG              | Field Goals                                         |
-| FGr             | Field Goal Percentage                               |
-| ThreeP          | 3-Point Field Goals                                 |
-| ThreePr         | 3-Point Field Goal Percentage                       |  
-| TwoP            | 2-Point Field Goals                                 |
-| TwoPr           | 2-Point Field Goals Percentage                      |
-| EffectiveP      | Effective Field Goal Percentage                     |
-| FT              | Free Throws                                         |
-| FTp             | Free Throw Percentage                               |
-| TRB             | Total Rebounds                                      |
-| AST             | Assists                                             |
-| STL             | Yards gained from scrimmage                         |
-| BLK             | Blocks                                              |
-| TOV             | Turnovers                                           |
-| PF              | Personal Fouls                                      |
-| PTS             | Points                                              |
+| PER             | Player Efficiency Rating                            |
+| WSpWG           | Win Shares Per 48 Minutes                           |
+| FG              | Field Goals Per Game                                |
+| ThreeP          | 3-Point Field Goals Per Game                        |
+| TwoP            | 2-Point Field Goals Per Game                        |
+| FT              | Free Throws Per Game                                |
+| TRB             | Rebounds Per Game                                   |
+| AST             | Assists Per Game                                    |
+| STL             | Steal Per Game                                      |
+| BLK             | Blocks Per Game                                     |
+| TOV             | Turnovers Per Game                                  |
+| PF              | Personal Fouls Per Game                             |
+| PTS             | Points  Per Game                                    |
 | Salary          | Annual salary of player (dollars)                   |
 
 ```{r}
@@ -69,7 +64,7 @@ Salary <- read_csv("NBA_season1718_salary.csv") %>%
   select(Player,Tm,Salary=salary)
 Seasons_Stats <- read_csv("Seasons_Stats.csv") %>%
   filter(Year==2016) %>%
-  select(Year,Player,Pos,Age,Tm,G,PER,
+  select(Player,Pos,Age,Tm,G,PER,
          WSpWG="WS/48",FG,ThreeP="3P",TwoP="2P",
          FT,TRB,AST,STL,BLK,TOV,PF,PTS)
 
@@ -85,8 +80,6 @@ sample_team <- sample(unique(NBA$Tm), 15, replace = FALSE)
 ```
 
 
-  
-  mutate(PTSpG=(PTS/G),TRBpG=(TRB/G))
 ```{r}
 ggplot(subset(NBA,Tm %in% sample_team),aes(Salary))+
   geom_density(col="red")+
@@ -99,7 +92,7 @@ ggplot(NBA,aes(Salary))+
 
 ##EDA
 
-```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Gameplayed and salaries")}
+```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Player Efficiency Rating and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
   aes(x = log(PER + 1), y = log(Salary)) + 
   geom_point(aes(color = factor(Tm)), size = .6) + 
@@ -126,12 +119,12 @@ ggplot(NBA) +
 
 ```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Win share per 84 mins and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
-  aes(x = WSperM, y = log(Salary)) + 
+  aes(x = WSpWG, y = log(Salary)) + 
   geom_point(aes(color = factor(Tm)), size = .6) + 
   geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
 
 ggplot(NBA) + 
-  aes(x = WSperM, y = log(Salary)) + 
+  aes(x = WSpWG, y = log(Salary)) + 
   geom_point(aes(color = factor(Pos)), size = .6) + 
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 ```
@@ -148,6 +141,7 @@ ggplot(NBA) +
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 
 ```
+
 ```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Totoal rebound per 84 mins and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
   aes(x = TRB, y = log(Salary)) + 
@@ -164,7 +158,7 @@ ggplot(NBA) +
 #Model fitting
 
 ```{r, fig.height=5, fig.width=7, fig.cap="Correlation Matrix"}
-NBA_Subset <- NBA[,c(6,7,8,)]
+NBA_Subset <- NBA[,c(6:18)]
 chart.Correlation(cor(NBA_Subset))
 ```
 Based on the correlation plot,

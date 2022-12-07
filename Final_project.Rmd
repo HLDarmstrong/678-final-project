@@ -67,15 +67,15 @@ The data set come from (https://www.kaggle.com/datasets/drgilermo/nba-players-st
 ```{r}
 Salary <- read_csv("NBA_season1718_salary.csv") %>% 
   select(Player,Tm,Salary=salary)
-Seasons_Stats <- read_csv("Seasons_Stats.csv") %>% 
+Seasons_Stats <- read_csv("Seasons_Stats.csv") %>%
+  filter(Year==2016) %>%
   select(Year,Player,Tm,Pos,Age,G,
          FTr,WSperM="WS/48",FG,FGr="FG%",
          ThreeP="3P",ThreePr="3P%",TwoP="2P",TwoPr="2P%",
          EffectiveP="eFG%",FT,FTp="FT%",TRB,AST,STL,BLK,
          TOV,PF,PTS)
 
-NBA <- inner_join(Seasons_Stats,Salary)%>%
-  filter(Year==2016)
+NBA <- inner_join(Seasons_Stats,Salary)
 NBA <- data.frame(NBA) %>% na.omit()
 
 set.seed(0611)

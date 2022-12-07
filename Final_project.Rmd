@@ -69,20 +69,24 @@ Salary <- read_csv("NBA_season1718_salary.csv") %>%
   select(Player,Tm,Salary=salary)
 Seasons_Stats <- read_csv("Seasons_Stats.csv") %>%
   filter(Year==2016) %>%
-  select(Year,Player,Tm,Pos,Age,G,
-         FTr,WSperM="WS/48",FG,FGr="FG%",
-         ThreeP="3P",ThreePr="3P%",TwoP="2P",TwoPr="2P%",
-         EffectiveP="eFG%",FT,FTp="FT%",TRB,AST,STL,BLK,
-         TOV,PF,PTS)
+  select(Year,Player,Pos,Age,Tm,G,PER,
+         WSpWG="WS/48",FG,ThreeP="3P",TwoP="2P",
+         FT,TRB,AST,STL,BLK,TOV,PF,PTS)
 
-NBA <- inner_join(Seasons_Stats,Salary)
-NBA <- data.frame(NBA) %>% na.omit()
+raw <- inner_join(Seasons_Stats,Salary)
+# NBA <- data.frame(raw) %>% na.omit()
+NBA <- raw %>% 
+  mutate(FG=(FG/G),ThreeP=(ThreeP/G),TwoP=(TwoP/G),
+         FT=(FT/G),TRB=(TRB/G),AST=(AST/G),STL=(STL/G),
+         BLK=(BLK/G),TOV=(TOV/G),PF=(PF/G),PTS=(PTS/G))
 
 set.seed(0611)
 sample_team <- sample(unique(NBA$Tm), 15, replace = FALSE)
-sample_game=c(27,29,31,34,37,39,59,60,67,68,70,71,72,73,74,75,76,77,78,79,80,81,82)
 ```
 
+
+  
+  mutate(PTSpG=(PTS/G),TRBpG=(TRB/G))
 ```{r}
 ggplot(subset(NBA,Tm %in% sample_team),aes(Salary))+
   geom_density(col="red")+
@@ -91,22 +95,18 @@ ggplot(subset(NBA,Tm %in% sample_team),aes(Salary))+
 ggplot(NBA,aes(Salary))+
   geom_density(col="blue")+
   facet_wrap(~Pos)
-
-ggplot(subset(NBA,G %in% sample_game),aes(Salary))+
-  geom_density(col="green")+
-  facet_wrap(~G)
 ```
 
 ##EDA
 
 ```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Gameplayed and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
-  aes(x = log(G + 1), y = log(Salary)) + 
+  aes(x = log(PER + 1), y = log(Salary)) + 
   geom_point(aes(color = factor(Tm)), size = .6) + 
   geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
 
 ggplot(NBA) + 
-  aes(x = log(G + 1), y = log(Salary)) + 
+  aes(x = log(PER + 1), y = log(Salary)) + 
   geom_point(aes(color = factor(Pos)), size = .6) + 
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 ```
@@ -164,7 +164,7 @@ ggplot(NBA) +
 #Model fitting
 
 ```{r, fig.height=5, fig.width=7, fig.cap="Correlation Matrix"}
-NBA_Subset <- NBA[,c(5:20)]
+NBA_Subset <- NBA[,c(6,7,8,)]
 chart.Correlation(cor(NBA_Subset))
 ```
 Based on the correlation plot,

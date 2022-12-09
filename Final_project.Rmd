@@ -164,6 +164,10 @@ chart.Correlation(cor(NBA_Subset))
 Based on the correlation plot,
 
 ```{r}
-# model=lmer()
+model=lmer(log(Salary)~FG+TwoP+PTS+
+             (1|Tm)+
+             (1|Pos),
+           data=NBA)
+summary(model)
 ```
 

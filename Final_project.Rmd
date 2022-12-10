@@ -6,11 +6,7 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(
-	echo = F,
-	message = FALSE,
-	warning = FALSE
-)
+knitr::opts_chunk$set(echo = F,message = FALSE,warning = FALSE)
 library(tidyr)
 library(ggplot2)
 library(tidyverse)
@@ -23,21 +19,23 @@ library(corrplot)
 library(PerformanceAnalytics)
 library(latexpdf)
 library(jtools)
+library(merTools)
+library(lmerTest)
 ```
 
-##Abstract
+## Abstract
+I knew Yao Ming when I was very young. He is the most famous Chinese player in NBA in China till today. Yao Ming has also brought the game of basketball to schools. I also started watching NBA games because of Yao Ming. Now Basketball is one of the most popular sports in the world, NBA has the most high quality of players.
+
+## Introduction
+Some of the players are over 34 million per year, and some of the players only have $83129 per year. Apart from the players' popularity and Internet traffic, I want to know what makes more money per year by looking at their statistics in the game. There are five positions in Basketball, each position will have a different ability to help their team to win. And each team will have different tactics like the Golden State Warriors are famous for the three points, so they might hire a better three-point shooter with a higher salary. So, I decided to make a multilevel model to find the influence of fixed effects.
+
+## Methods
 
 
-##Introduction
+### Data Preprocessing
 
-I knew Yao Ming when I was very young. He is the most famous Chinese player in NBA in China till today. Yao Ming has also brought the game of basketball to schools. I also started watching NBA games because of Yao Ming. Now Basketball is one of the most popular sports in the world, NBA has the most high quality of players. Some of the players are over 34 millions per year. Apart from the players' popularity and Internet traffic, I want to know what makes more money per year by looking at their statistic in the game. There are five positions in Basketball, each position will have different ability to help their team to win. And each teams will have different tactics like the Golden State Warriors are famous the three points, so they might hire better three-point shooter in higher salary. So, I decided make a multilevel model to find the influence of fixed effects.
+The data set come from (https://www.kaggle.com/datasets/drgilermo/nba-players-stats), which has the Season stats from many different aspects, such as Three-point field goals, two points field goals, win shares, etc. And I found the (https://www.kaggle.com/datasets/koki25ando/salary) which has the salary of NBA players during the season 2017-2018, Some of the players signed long-term contracts longer than one year with teams in different years, It is hard to track the start year, but the team can trade the player when they are not performance really good, I think it is fair to use one-year stats to define the relationship with salary. So I just filter the year in the Season stats in 2016 because the salary is based on the players' last season performance, an inner join with the salary data, finally I got 251 observations in 13 variables. There are five positions in Basketball, each position will have a different ability to help their team to win. And each team will have different tactics like the Golden State Warriors are famous for the three points. I decided to make a multilevel model to find the influence of fixed effects.
 
-##Methods
-
-
-###Data Preprocessing
-
-The data set come from (https://www.kaggle.com/datasets/drgilermo/nba-players-stats), which has the Season stats from many different aspects, such ass Three point field goals, two points field goals, win shares, etc. And I found the (https://www.kaggle.com/datasets/koki25ando/salary) which has the salary of NBA players during the season 2017-2018, so just filter the year in the Season stats in 2016 because the salary is based on the players' last season performance, and inner join with the salary data, finally I got 251 observations in 13 variables. There are five positions in Basketball, each position will have different ability to help their team to win. And each teams will have different tactics like the Golden State Warriors are famous the three points. I decided make a multilevel model to find the influence of fixed effects.
 
 
 | column names    | explanation                                         |
@@ -80,7 +78,6 @@ NBA <- raw %>%
 set.seed(0611)
 sample_team <- sample(unique(NBA$Tm), 15, replace = FALSE)
 ```
-
 
 ```{r}
 ggplot(subset(NBA,Tm %in% sample_team),aes(Salary))+
@@ -241,23 +238,38 @@ ggplot(NBA) +
 ```
 
 
-#Model fitting
+## Model fitting
 
 ```{r, fig.height=5, fig.width=7, fig.cap="Correlation Matrix"}
 NBA_Subset <- NBA[,c(6:18)]
 chart.Correlation(cor(NBA_Subset))
 ```
-I will pick the predictors based on the correlation plot, I will keep the PTS, STL, AST, BLK, TOV and TRB, because they are the most important stats in basketball, For the other groups with high correlation like WSpWG and PER(0.88), FT and TOV(0.81), FG are having high correlations with many factors, So I decide to remove PER, FT and FG to fit the model.
+I will pick the predictors based on the correlation plot, but I still keep the PTS, STL, AST, BLK and TRB, because they are the most important stats in basketball, For the other groups with high correlation like WSpWG and PER(0.88), FT and TOV(0.81), FG and TOV are having high correlations with many factors, So I decide to remove PER, TOV, FT and FG to fit the model.
 
 ```{r}
-model=lmer(log(Salary)~PTS+STL+AST+BLK+TOV+TRB+PF+ThreeP+TwoP+
+log_NBA <- NBA
+log_NBA$PTS <- log(1+NBA_Subset$PTS)
+log_NBA$STL <- log(1+NBA_Subset$STL)
+log_NBA$AST <- log(1+NBA_Subset$AST)
+log_NBA$BLK <- log(1+NBA_Subset$BLK)
+log_NBA$TRB <- log(1+NBA_Subset$TRB)
+log_NBA$PF <- log(1+NBA_Subset$PF)
+log_NBA$ThreeP <- log(1+NBA_Subset$ThreeP)
+log_NBA$TwoP <- log(1+NBA_Subset$TwoP)
+
+
+model=lmer(log(Salary+1)~PTS+STL+AST+BLK+TRB+PF+ThreeP+
              (1|Tm)+
              (1|Pos),
-           data=NBA)
+           data=log_NBA,REML = F)
 summary(model)
 ```
 
 ```{r}
-summ(model)
+plotFEsim(FEsim(model))
 ```
 
+
+## Result
+
+## Appendix

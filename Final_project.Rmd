@@ -2,7 +2,9 @@
 title: "Final_Project_NBA"
 author: "Shengbo Wang"
 date: "2022-12-05"
-output: pdf_document
+output:
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -15,6 +17,7 @@ library(knitr)
 library(stringr)
 library(kableExtra)
 library(lme4)
+library(correlation)
 library(corrplot)
 library(PerformanceAnalytics)
 library(latexpdf)
@@ -24,19 +27,17 @@ library(lmerTest)
 ```
 
 ## Abstract
-I knew Yao Ming when I was very young. He is the most famous Chinese player in NBA in China till today. Yao Ming has also brought the game of basketball to schools. I also started watching NBA games because of Yao Ming. Now Basketball is one of the most popular sports in the world, NBA has the most high quality of players.
+Basketball is one of my favorite sport, and there are millions of people are playing basketball in school or after works. NBA is the legend contains the higher quality players all over the world. What is variables could represent players' performance? What kinds of players could earn more salary per year ? What the team's preference? I fit to a multilevel model with two group levels. The result indicates team MEL prefers three pointer rather than other team because the slope is much higher than other teams. This report has four parts: Introduction, Method, Result and Discussion.
 
 ## Introduction
-Some of the players are over 34 million per year, and some of the players only have $83129 per year. Apart from the players' popularity and Internet traffic, I want to know what makes more money per year by looking at their statistics in the game. There are five positions in Basketball, each position will have a different ability to help their team to win. And each team will have different tactics like the Golden State Warriors are famous for the three points, so they might hire a better three-point shooter with a higher salary. So, I decided to make a multilevel model to find the influence of fixed effects.
+Yao Ming is the most famous Chinese player in NBA in China till today. Yao Ming has also brought the game of basketball to schools. I knew him when I was very young. And I started watching NBA games because of Yao Ming. Now Basketball is became one of the most popular sports in the world, NBA has the most high quality of players. Some of the players are over 34 million per year, and some of the players only have $83129 per year. Apart from the players' popularity and Internet traffic, I want to know what makes more money per year by looking at their statistics in the game. There are five positions in Basketball, each position will have a different ability to help their team to win. And each team will have different tactics like the Golden State Warriors are famous for the three points, so they might hire a better three-point shooter with a higher salary. So, I decided to make a multilevel model to find the influence of fixed effects.
 
 ## Methods
 
-
 ### Data Preprocessing
 
-The data set come from (https://www.kaggle.com/datasets/drgilermo/nba-players-stats), which has the Season stats from many different aspects, such as Three-point field goals, two points field goals, win shares, etc. And I found the (https://www.kaggle.com/datasets/koki25ando/salary) which has the salary of NBA players during the season 2017-2018, Some of the players signed long-term contracts longer than one year with teams in different years, It is hard to track the start year, but the team can trade the player when they are not performance really good, I think it is fair to use one-year stats to define the relationship with salary. So I just filter the year in the Season stats in 2016 because the salary is based on the players' last season performance, an inner join with the salary data, finally I got 251 observations in 13 variables. There are five positions in Basketball, each position will have a different ability to help their team to win. And each team will have different tactics like the Golden State Warriors are famous for the three points. I decided to make a multilevel model to find the influence of fixed effects.
-
-
+The data set come from (https://www.kaggle.com/datasets/drgilermo/nba-players-stats), which has the Season stats from many different aspects, such as Three-point field goals, two points field goals, win shares, etc. And I found the (https://www.kaggle.com/datasets/koki25ando/salary) which has the salary of NBA players during the season 2017-2018, Some of the players signed long-term contracts longer than one year with teams in different years, It is hard to track the start year, but the team can trade the player when they are not performance really good, I think it is fair to use one-year stats to define the relationship with salary. So I just filter the year in the Season stats in 2016 because the salary is based on the players' last season performance, an inner join with the salary data, finally I got 146 observations in 13 variables. 
+There are five positions in Basketball, each position will have a different ability to help their team to win. And each team will have different tactics like the Golden State Warriors are famous for the three points. I decided to make a multilevel model to find the influence of fixed effects.
 
 | column names    | explanation                                         |
 | :--:            | :-----                                              |
@@ -62,10 +63,10 @@ The data set come from (https://www.kaggle.com/datasets/drgilermo/nba-players-st
 
 ```{r}
 Salary <- read_csv("NBA_season1718_salary.csv") %>% 
-  select(Player,Tm,Salary=salary)
+  dplyr::select(Player,Tm,Salary=salary)
 Seasons_Stats <- read_csv("Seasons_Stats.csv") %>%
   filter(Year==2016) %>%
-  select(Player,Pos,Age,Tm,G,PER,
+  dplyr::select(Player,Pos,Age,Tm,G,PER,
          WSpWG="WS/48",FG,ThreeP="3P",TwoP="2P",
          FT,TRB,AST,STL,BLK,TOV,PF,PTS)
 
@@ -73,60 +74,143 @@ raw <- inner_join(Seasons_Stats,Salary)
 NBA <- raw %>% 
   mutate(FG=(FG/G),ThreeP=(ThreeP/G),TwoP=(TwoP/G),
          FT=(FT/G),TRB=(TRB/G),AST=(AST/G),STL=(STL/G),
-         BLK=(BLK/G),TOV=(TOV/G),PF=(PF/G),PTS=(PTS/G))
-
+         BLK=(BLK/G),TOV=(TOV/G),PF=(PF/G),PTS=(PTS/G)) %>% na.omit()
+NBA$Tm <- factor(NBA$Tm)
+NBA$Pos <- factor(NBA$Pos)
+NBA <- data.frame(NBA)
 set.seed(0611)
 sample_team <- sample(unique(NBA$Tm), 15, replace = FALSE)
 ```
 
-```{r}
-ggplot(subset(NBA,Tm %in% sample_team),aes(Salary))+
-  geom_density(col="red")+
-  facet_wrap(~Tm)
 
-ggplot(NBA,aes(Salary))+
-  geom_density(col="blue")+
-  facet_wrap(~Pos)
-```
-
-##EDA
-
-```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Player Efficiency Rating and salaries")}
-ggplot(subset(NBA,Tm %in% sample_team)) + 
-  aes(x = log(PER + 1), y = log(Salary)) + 
-  geom_point(aes(color = factor(Tm)), size = .6) + 
-  geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
-
-ggplot(NBA) + 
-  aes(x = log(PER + 1), y = log(Salary)) + 
-  geom_point(aes(color = factor(Pos)), size = .6) + 
-  geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
-```
-
+## EDA
 ```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Points per Game made and salaries")}
 
 ggplot(subset(NBA,Tm %in% sample_team)) + 
-  aes(x = log(PTS + 1), y = log(Salary)) + 
+  aes(x = PTS , y = log(Salary+1)) + 
   geom_point(aes(color = factor(Tm)), size = .6) + 
   geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
 
 ggplot(NBA) + 
-  aes(x = log(PTS + 1), y = log(Salary)) + 
+  aes(x = PTS, y = log(Salary+1)) + 
+  geom_point(aes(color = factor(Pos)), size = .6) + 
+  geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
+```
+As the Figure 1(l) shows the relationship between points per game and salary in different teams. The plot shows in both groups that the most of the teams have positive slope, the more point makers will have a higher salary. CHI is the different team have the opposite slope in points and salary. I drawled the relationship plots with each variable in my data set, they are quite the same as the Figure 1(l) And here is a brief summary of interest thing that I did not expect. The GSW, PHI and DAL give higher salary to lower PER and WSpWG players. CHI give higher salary to lower PTS, FG, TRB and PF players. SAC give really high salary to ThreeP players. I put the plots in the appendix if you want check something else.
+Figure 2(r) shows the relationship between points per game and salary in different positions. All of the plots are showing a positive relationship.
+
+```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Turnovers  per games and salaries")}
+ggplot(subset(NBA,Tm %in% sample_team)) + 
+  aes(x = TOV, y = log(Salary)) + 
+  geom_point(aes(color = factor(Tm)), size = .6) + 
+  geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
+
+ggplot(NBA) + 
+  aes(x = TOV, y = log(Salary)) + 
+  geom_point(aes(color = factor(Pos)), size = .6) + 
+  geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
+```
+\newpage
+Figure 2(l) is the relationship between TOV and Salary in different teams. The plots is also showing the relationship is positive which is confuse me that how come the teams are giving higher salary to the players who has more Turnover in the game. So, I check the correlation, it will shows in next part of this report.
+
+## Model fitting
+To select the variables fit the model. I made distribution plots of the variables based on each group level. I put in Appendix.
+
+```{r, fig.height=5, fig.width=7, fig.cap="Correlation Plot"}
+NBA_Subset <- NBA[,c(6:18)]
+cor_NBA <- cor(NBA_Subset)
+chart.Correlation(cor_NBA)
+```
+The TOV are are highly correlate with many facors, this is the reason why does teams give higher salary with higher TOV players. Next, I will pick the predictors to fit in multilevel model. I will keep the PTS, ThreeP and TRB because they are the most important stats in basketball. For the other groups with high correlation like WSpWG and PER(0.88), FT and TOV(0.81), FG, AST, BLK, STL and TOV are having high correlations with many factors, So I decide to remove PER, TOV, and FG to fit the model. Additionally, the random effect of Tm are PTS, TRB and ThreeP.
+
+```{r, results='hide'}
+model=lmer(log(1+Salary)~log(1+PTS)+log(1+TRB)+log(1+ThreeP)+log(1+WSpWG)+
+             (1+log(1+PTS)+log(1+ThreeP)+log(1+TRB)|Tm)+
+             (1|Pos),
+           data=NBA)
+summary(model)
+
+```
+
+Here is the summary table of the model, at significant at 0.05, just $log(WSpWG+1)$ is not significant will really close p-value.
+
+|            |Estimate   |Std. Error |df         |t value |Pr(>|t|)     |
+|:---:       |:---:      |:---:      |:---:      |:---:   |:---:        |
+|(Intercept) |     12.4328 |    0.3227 | 22.7067 | 38.528 | < 2e-16 ***|
+|(1 + PTS)   |   0.5397  |   0.2438  |15.5212 |  2.213 | 0.04225 *  |
+|log(1 + TRB)  |    0.8288 |    0.2720 | 22.2927 |  3.047 | 0.00585 ** |
+|log(1 + ThreeP) |  0.6317  |   0.2680 | 21.5527 |  2.357 | 0.02794 *  |
+|log(1 + WSpWG)  |  2.6771  |   1.4370| 133.9017 |  1.863 | 0.06466 .  |
+### Fixed Effect
+
+```{r,fig.cap="Fix Effect of Model"}
+plotFEsim(FEsim(model))
+```
+### Random Effect
+
+Here is the tables of random effect of Teams.
+```{r}
+round(ranef(model)$Tm,4)
+ranef(model)$Pos
+```
+
+
+
+### Model Check
+
+```{r, fig.show="hold", out.width="50%"}
+plot(model)
+qqnorm(resid(model))
+qqline(resid(model))
+```
+Check the model with Residual plot and qq plot. The residuals plot shows the points are randomly and equally spaced around the mean.
+The qq plot also shows most of the points are along the straight line. We can assume that this model it is normal. 
+
+## Result
+### Interpretation
+
+The formula of fixed effect with two random effects(Teams and Positions): $$log(Salary+1)=12.4328 +0.5397*log(PTS+1)+0.8288 *log(TRB+1)+0.6317*log(ThreeP+1)+2.6771*log(WSpWG+1)$$
+Intercept:The expected value of Salary per year is 12.4328;
+PTS: The Salary per year will increase 0.54% as the points per game increase 1%; The salary per year will increase 0.83% as the rebound per game increase 1%; The salary per year will increase 0.63% as the Three points increase 1%; The salary per year will increase 2.68% as the Win share per year increase 1%.
+Each team 
+For a example to add a random effect who is PG in DAL, the formula will be $$log(Salary+1)=(12.4328+0.0674) +(0.5397+0.1109)*log(PTS+1)+(0.8288-0.1479) *log(TRB+1)+(0.6317-0.1322)*log(ThreeP+1)+2.6771*log(WSpWG+1)$$
+For each increase 1% of player's point, the salary is 0.779% for DAL's point guard. Each coefficient represent each preference in each type of statistics.
+
+
+
+## Discussion
+In this report I used multilevel model to find out the relationship between Players' salaries per year with Points per game, Rebounds per game, Three-point per game, Win share per game and Free throw per year in two random effect levels(Teams and Positions). All of the predictors are influence the predictions in positively and significant, expect the Free Throw. The free throw will have many different situations. A free throw is awarded one point. Free throws are awarded to teams based on some formats involving the number and/or type of fouls committed in the half court. A foul on a shooter always results in two or three free throws, depending on where he was shooting from. I think it will better when the data will give out and one(goal plus free throw).
+The National Basketball Association today announced that the Salary Cap has been set at $99.093 million for the 2017-18 season. Like Durant wants to get championship and join the GSW with lower salary. Players are having business value to the teams, people willing to buy ticket when the famous players have the game that night.Such situation will make the model with more noise. The model will be better when I add more reliable data.
+
+\newpage
+## reference
+https://www.nba.com/news/nba-salary-cap-set-2017-18-season-99093-million
+
+## Appendix
+```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Player Efficiency Rating and salaries")}
+ggplot(subset(NBA,Tm %in% sample_team)) + 
+  aes(x = PER , y = log(Salary+1)) + 
+  geom_point(aes(color = factor(Tm)), size = .6) + 
+  geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
+
+ggplot(NBA) + 
+  aes(x = PER, y = log(Salary+1)) + 
   geom_point(aes(color = factor(Pos)), size = .6) + 
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 ```
 
 ```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Win share per 48 mins and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
-  aes(x = WSpWG, y = log(Salary)) + 
+  aes(x = WSpWG, y = log(Salary+1)) + 
   geom_point(aes(color = factor(Tm)), size = .6) + 
   geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
 
 ggplot(NBA) + 
-  aes(x = WSpWG, y = log(Salary)) + 
+  aes(x = WSpWG, y = log(Salary+1)) + 
   geom_point(aes(color = factor(Pos)), size = .6) + 
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 ```
+
 ```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Three-point per Game and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
   aes(x = ThreeP, y = log(Salary)) + 
@@ -177,6 +261,7 @@ ggplot(NBA) +
   geom_point(aes(color = factor(Pos)), size = .6) + 
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 ```
+
 ```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Assiants  per games and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
   aes(x = AST, y = log(Salary)) + 
@@ -213,17 +298,7 @@ ggplot(NBA) +
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 ```
 
-```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Turnovers  per games and salaries")}
-ggplot(subset(NBA,Tm %in% sample_team)) + 
-  aes(x = TOV, y = log(Salary)) + 
-  geom_point(aes(color = factor(Tm)), size = .6) + 
-  geom_smooth(aes(color = factor(Tm)), method = "lm", se = FALSE, formula = 'y ~ x')
 
-ggplot(NBA) + 
-  aes(x = TOV, y = log(Salary)) + 
-  geom_point(aes(color = factor(Pos)), size = .6) + 
-  geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
-```
 
 ```{r, fig.show="hold", out.width="50%",fig.cap=paste("Realationship between Personal fouls per games and salaries")}
 ggplot(subset(NBA,Tm %in% sample_team)) + 
@@ -237,39 +312,101 @@ ggplot(NBA) +
   geom_smooth(aes(color = factor(Pos)), method = "lm", se = FALSE, formula = 'y ~ x')
 ```
 
-
-## Model fitting
-
-```{r, fig.height=5, fig.width=7, fig.cap="Correlation Matrix"}
-NBA_Subset <- NBA[,c(6:18)]
-chart.Correlation(cor(NBA_Subset))
-```
-I will pick the predictors based on the correlation plot, but I still keep the PTS, STL, AST, BLK and TRB, because they are the most important stats in basketball, For the other groups with high correlation like WSpWG and PER(0.88), FT and TOV(0.81), FG and TOV are having high correlations with many factors, So I decide to remove PER, TOV, FT and FG to fit the model.
-
 ```{r}
-log_NBA <- NBA
-log_NBA$PTS <- log(1+NBA_Subset$PTS)
-log_NBA$STL <- log(1+NBA_Subset$STL)
-log_NBA$AST <- log(1+NBA_Subset$AST)
-log_NBA$BLK <- log(1+NBA_Subset$BLK)
-log_NBA$TRB <- log(1+NBA_Subset$TRB)
-log_NBA$PF <- log(1+NBA_Subset$PF)
-log_NBA$ThreeP <- log(1+NBA_Subset$ThreeP)
-log_NBA$TwoP <- log(1+NBA_Subset$TwoP)
+ggplot(subset(NBA,Tm %in% sample_team),aes(Salary))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
 
+ggplot(NBA,aes(Salary))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
 
-model=lmer(log(Salary+1)~PTS+STL+AST+BLK+TRB+PF+ThreeP+
-             (1|Tm)+
-             (1|Pos),
-           data=log_NBA,REML = F)
-summary(model)
+ggplot(subset(NBA,Tm %in% sample_team),aes(TRB))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(TRB))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(ThreeP))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(ThreeP))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(WSpWG))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(WSpWG))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(FG))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(FG))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(TwoP))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(TwoP))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(FT))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(FT))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(AST))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(AST))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(STL))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(STL))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(BLK))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(BLK))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(TOV))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(TOV))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
+ggplot(subset(NBA,Tm %in% sample_team),aes(PTS))+
+  geom_density(col="red")+
+  facet_wrap(~Tm)
+
+ggplot(NBA,aes(PTS))+
+  geom_density(col="blue")+
+  facet_wrap(~Pos)
+
 ```
-
-```{r}
-plotFEsim(FEsim(model))
-```
-
-
-## Result
-
-## Appendix

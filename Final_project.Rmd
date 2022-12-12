@@ -27,7 +27,7 @@ library(lmerTest)
 ```
 
 ## Abstract
-Basketball is one of my favorite sport, and there are millions of people are playing basketball in school or after works. NBA is the legend contains the higher quality players all over the world. What is variables could represent players' performance? What kinds of players could earn more salary per year ? What the team's preference? I fit to a multilevel model with two group levels. The result indicates team MEL prefers three pointer rather than other team because the slope is much higher than other teams. This report has four parts: Introduction, Method, Result and Discussion.
+Basketball is one of my favorite sport, and there are millions of people are playing basketball in school or after works. NBA is the legend contains the higher quality players all over the world. What is variables could represent players' performance? What kinds of players could earn more salary per year ? What the team's preference? I fit to a multilevel model with two group levels. The result indicates team MEL prefers three pointer rather than other team because the slope is much higher than other teams. ATL has the higher basic salary This report has four parts: Introduction, Method, Result and Discussion.
 
 ## Introduction
 Yao Ming is the most famous Chinese player in NBA in China till today. Yao Ming has also brought the game of basketball to schools. I knew him when I was very young. And I started watching NBA games because of Yao Ming. Now Basketball is became one of the most popular sports in the world, NBA has the most high quality of players. Some of the players are over 34 million per year, and some of the players only have $83129 per year. Apart from the players' popularity and Internet traffic, I want to know what makes more money per year by looking at their statistics in the game. There are five positions in Basketball, each position will have a different ability to help their team to win. And each team will have different tactics like the Golden State Warriors are famous for the three points, so they might hire a better three-point shooter with a higher salary. So, I decided to make a multilevel model to find the influence of fixed effects.
@@ -171,16 +171,20 @@ The qq plot also shows most of the points are along the straight line. We can as
 
 The formula of fixed effect with two random effects(Teams and Positions): $$log(Salary+1)=12.4328 +0.5397*log(PTS+1)+0.8288 *log(TRB+1)+0.6317*log(ThreeP+1)+2.6771*log(WSpWG+1)$$
 Intercept:The expected value of Salary per year is 12.4328;
-PTS: The Salary per year will increase 0.54% as the points per game increase 1%; The salary per year will increase 0.83% as the rebound per game increase 1%; The salary per year will increase 0.63% as the Three points increase 1%; The salary per year will increase 2.68% as the Win share per year increase 1%.
-Each team 
-For a example to add a random effect who is PG in DAL, the formula will be $$log(Salary+1)=(12.4328+0.0674) +(0.5397+0.1109)*log(PTS+1)+(0.8288-0.1479) *log(TRB+1)+(0.6317-0.1322)*log(ThreeP+1)+2.6771*log(WSpWG+1)$$
-For each increase 1% of player's point, the salary is 0.779% for DAL's point guard. Each coefficient represent each preference in each type of statistics.
+PTS: The Salary per year will increase 0.54% as the points per game increase 1%; 
+TRB: The salary per year will increase 0.83% as the rebound per game increase 1%; 
+ThreeP: The salary per year will increase 0.63% as the Three points increase 1%; 
+WSpWG: The salary per year will increase 2.68% as the Win share per year increase 1%.
 
-
+For a example to add a random effect who is PG in GSW, the formula will be $$log(Salary+1)=(12.4328+0.1301) +(0.5397+0.2342)*log(PTS+1)+(0.8288-0.3078) *log(TRB+1)+(0.6317-0.2738)*log(ThreeP+1)+2.6771*log(WSpWG+1)$$
+For each increase 1% of player's point, the salary is 0.774% for GSW's point guard. Each coefficient represent each preference in each type of statistics. We can see most of the coefficant of random effect of GSW is negetive, as a big three point maker team, it should be more three-point will give higher salary. The result shows GSW cares more Win shard per game rather than Three-point and Rebounds.
 
 ## Discussion
 In this report I used multilevel model to find out the relationship between Players' salaries per year with Points per game, Rebounds per game, Three-point per game, Win share per game and Free throw per year in two random effect levels(Teams and Positions). All of the predictors are influence the predictions in positively and significant, expect the Free Throw. The free throw will have many different situations. A free throw is awarded one point. Free throws are awarded to teams based on some formats involving the number and/or type of fouls committed in the half court. A foul on a shooter always results in two or three free throws, depending on where he was shooting from. I think it will better when the data will give out and one(goal plus free throw).
+
 The National Basketball Association today announced that the Salary Cap has been set at $99.093 million for the 2017-18 season. Like Durant wants to get championship and join the GSW with lower salary. Players are having business value to the teams, people willing to buy ticket when the famous players have the game that night.Such situation will make the model with more noise. The model will be better when I add more reliable data.
+
+With the change of the times, from Shaquille O'Neal's big center era to the current small ball era led by Curry, the league is changing because of the novel and effective style of play, because of injuries, zion williamson, who has not fulfilled his talent in the league, and Nothing has changed, in the coming era of Victor Wembanyama, the new variales will bring to this model. I hope that more rookies will show their talents in the future to earn more salary.
 
 \newpage
 ## reference
